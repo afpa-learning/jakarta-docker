@@ -1,0 +1,46 @@
+services:
+  # Premier service, application Java déployée sur Tomcat
+  app-tomcat:
+    container_name: app-tomcat
+    # Force le conteneur à se redémarrer s'il est arrêté autrement que manuellement
+    # Démarre automatique au lancement du "Docker engine"
+    restart: 'always'
+    # Indique le sous-dossier contenant le Dockerfile
+    build:
+      context: ./app
+    # Chargement des différentes variables d'environnement
+    env_file:
+      - "./.env"
+    # L'application dépend de la base de données, on le fait savoir
+    depends_on:
+      - app-mysql
+    ports:
+      - "8080:8080"
+    volumes:
+      # Volume monté pour obtenir les logs du Tomcat
+      - ${LOG_DIR_TOMCAT}:/usr/local/tomcat/logs
+
+  # Second service, la base de données
+  app-mysql:
+    container_name: app-mysql
+    restart: 'always'
+    # Indication de la position du Dockerfile
+    build:
+      context: ./database/mysql
+    # Montage d'un ensemble de volumes sur le disque de la machine hôte
+    volumes:
+      # Contient les données de la base
+      - ${MYSQL_DATA_DIR}:/var/lib/mysql
+      # Contient les logs
+      - ${LOG_DIR_MYSQL}:/var/log/mysql
+      # Copie du fichier de configuration (TODO : tester sans)
+      - ${MYSQL_CONF_FILE}:/etc/mysql/conf.d/my.cnf
+      # Copie des scripts de création de BDD (TODO : tester sans)
+      - ${MYSQL_DUMP_DIR}:/docker-entrypoint-initdb.d
+    environment:
+      # Paramétrage du mot de passe de l'utilisateur ROOT
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      # Paramétrage du nom de la base initialement créée
+      MYSQL_DATABASE: ${MY_DATABASE}
+    ports:
+      - "8036:3306"

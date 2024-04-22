@@ -1,0 +1,6 @@
+# Pas besoin de prendre en compte les fichiers compilés dans le Dockerfile
+*/target
+.settings/
+.classpath
+.project
+/deploy
